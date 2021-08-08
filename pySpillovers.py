@@ -33,8 +33,11 @@ for sector in sectors:
 	sectorData[sector] = df
 
 	# marketDays
-	df = pd.DataFrame(pd.DatetimeIndex(sectorData[sector].index.values).year,columns=["year"]).groupby("year")["year"].count()
-	marketDays[sector] = df
+	if marketDaysMode == "Manual":
+		marketDays = manualMarketDays
+	else:
+		df = pd.DataFrame(pd.DatetimeIndex(sectorData[sector].index.values).year,columns=["year"]).groupby("year")["year"].count()
+		marketDays[sector] = df
 
 	# Filter sectorData between DateTo and DateFrom
 	sectorData[sector] = sectorData[sector].loc[dateFrom:dateTo]

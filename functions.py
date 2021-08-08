@@ -18,10 +18,12 @@ def calcVolatilityDiebold(lnvariance,marketDays):
 	volatility = {}
 	for sector in lnvariance:
 		lnvariance[sector] = lnvariance[sector].to_frame('lnvariance')
-		marketDays[sector] = marketDays[sector].to_frame('marketDays')
-		lnvariance[sector]['year'] = pd.to_datetime(lnvariance[sector].index.values).year.astype(int)
-		lnvariance[sector] = lnvariance[sector].reset_index().merge(marketDays[sector],how='left',on='year').set_index('Date')
-
+		if isinstance(marketDays,dict):
+			marketDays[sector] = marketDays[sector].to_frame('marketDays')
+			lnvariance[sector]['year'] = pd.to_datetime(lnvariance[sector].index.values).year.astype(int)
+			lnvariance[sector] = lnvariance[sector].reset_index().merge(marketDays[sector],how='left',on='year').set_index('Date')
+		else:
+			lnvariance[sector]['marketDays'] = marketDays
 		volatility[sector] = 100 * np.sqrt(lnvariance[sector]['marketDays']*lnvariance[sector]['lnvariance'])
 	return volatility
 
@@ -29,10 +31,12 @@ def calcVolatilityAslam(lnvariance,marketDays):
 	volatility = {}
 	for sector in lnvariance:
 		lnvariance[sector] = lnvariance[sector].to_frame('lnvariance')
-		marketDays[sector] = marketDays[sector].to_frame('marketDays')
-		lnvariance[sector]['year'] = pd.to_datetime(lnvariance[sector].index.values).year.astype(int)
-		lnvariance[sector] = lnvariance[sector].merge(marketDays[sector],how='left',on='year')
-
+		if isinstance(marketDays,dict):
+			marketDays[sector] = marketDays[sector].to_frame('marketDays')
+			lnvariance[sector]['year'] = pd.to_datetime(lnvariance[sector].index.values).year.astype(int)
+			lnvariance[sector] = lnvariance[sector].reset_index().merge(marketDays[sector],how='left',on='year').set_index('Date')
+		else:
+			lnvariance[sector]['marketDays'] = marketDays
 		volatility[sector] = np.arcsinh(np.sqrt(lnvariance[sector]['marketDays']*lnvariance[sector]['lnvariance']))
 	return volatility
 
