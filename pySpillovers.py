@@ -22,25 +22,24 @@ marketDaysYearEnd = df.loc['marketDaysYearEnd','VALUE']
 # Import sectors
 sectors = np.genfromtxt('_sectorsList.csv',delimiter=',',dtype="str")
 
-# Import sectorData, reIndex sectorData with Date
-sectorData = {}
+# Import sectorsData, reIndex sectorsData with Date
+sectorsData = {}
 marketDays = {}
 for sector in sectors:
-	# sectorData
+	# sectorsData
 	df = pd.read_csv('DailyPrices\\'+sector+'.JK_D.csv') \
 		.assign(Date=lambda x: pd.to_datetime(x.Date, format="%d-%m-%Y")) \
 		.set_index("Date")
-	sectorData[sector] = df
+	sectorsData[sector] = df
 
 	# marketDays
 	if marketDaysMode == "Manual":
 		marketDays = manualMarketDays
 	else:
-		df = pd.DataFrame(pd.DatetimeIndex(sectorData[sector].index.values).year,columns=["year"]).groupby("year")["year"].count()
-		marketDays[sector] = df
+		marketDays[sector] = f.calcMarketDays(sectorsData[sector],marketDaysYearEnd)
 
-	# Filter sectorData between DateTo and DateFrom
-	sectorData[sector] = sectorData[sector].loc[dateFrom:dateTo]
+	# Filter sectorsData between DateTo and DateFrom
+	sectorsData[sector] = sectorsData[sector].loc[dateFrom:dateTo]
 
 # ==============================
 # ==DIEBOLD 2012 SPILLOVERS INDEX==
@@ -48,7 +47,7 @@ for sector in sectors:
 # ==============================
 # DATA PREPARATION BASED ON OUTPUTMODE
 # ==============================
-lnvariance = f.calcLnvariance(sectorData)
+lnvariance = f.calcLnvariance(sectorsData)
 
 if outputMode == "Volatility Diebold":
 	volatility = f.calcVolatilityDiebold(lnvariance,marketDays)
@@ -61,8 +60,9 @@ elif outputMode == "Volatility Aslam":
 setStats = f.calcSetStats(volatility)
 
 # ==============================
-# FORECAST ERROR VARIANCE DECOMPOSITIONS (FEVD)
+# Spillovers Table
 # ==============================
+spilloversTable, lag_order, forecast_horizon = f.calcSpilloversTable(volatility)
 
 # ==============================
 # TOTAL, DIRECTIONAL, NET SPILLOVERS
