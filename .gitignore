@@ -2,3 +2,5 @@ __pycache__
 env
 ~$*
 .gitignore
+spilloversTable.csv
+__pycache__

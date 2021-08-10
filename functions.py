@@ -5,7 +5,7 @@ import pandas as pd, numpy as np
 from statsmodels.tsa.api import VAR
 
 # ==============================
-# MARKET DAYS
+# IMPORT DATA
 # ==============================
 def calcMarketDays(sectorData,marketDaysYearEnd=None):
 	# sectorData is a dataframes of data for a sector/market
@@ -20,6 +20,12 @@ def calcMarketDays(sectorData,marketDaysYearEnd=None):
 		marketDays.loc[marketDays.index[-1]] = marketDaysYearEnd
 	return marketDays
 
+def getWithRollingWindow(sectorData,dateFrom,dateTo,rollingWindow=200):
+	rollingWindow = 200 if rollingWindow is None else rollingWindow
+	rollingWindow = rollingWindow - 1
+	sectorData = pd.concat([(sectorData.loc[:dateFrom]).iloc[-rollingWindow:],sectorData.loc[dateFrom:dateTo]])
+	return sectorData
+
 # ==============================
 # DATA PREPARATION BASED ON OUTPUTMODE
 # ==============================
@@ -29,7 +35,6 @@ def calcLnvariance (sectorsData):
 	# np.log is natural log
 	lnvariance = pd.DataFrame()
 	for sector in sectorsData:
-		a = np.log(sectorsData[sector]['High'])
 		lnvariance[sector] = 0.361*((np.log(sectorsData[sector]['High'])-np.log(sectorsData[sector]['Low']))**2)
 	return lnvariance
 
@@ -85,28 +90,33 @@ def calcSetStats(volatility):
 # ==============================
 # Spillovers Table Based on Diebold Yilmaz 2012
 # ==============================
-def calcSpilloversTable(volatility, forecast_horizon=10, lag_order=None):
+def calcAvgSpilloversTable(volatility, forecast_horizon=10, lag_order=None):
 	# ===
 	# sources:
 	# https://www.statsmodels.org/dev/vector_ar.html
 	# https://en.wikipedia.org/wiki/n#Comparison_with_BIC
 	# https://groups.google.com/g/pystatsmodels/c/BqMqOIghN78/m/21NkPAEPJgIJ
 	# ===
-	model = VAR(volatility)
-	results = model.fit(lag_order,ic='aic',verbose=True)
+	forecast_horizon = 10 if forecast_horizon is None else forecast_horizon
 	
-	lag_order = results.k_ar
+	model = VAR(volatility)
+	if lag_order==None:
+		results = model.fit(lag_order,ic='aic')
+		lag_order = results.k_ar
+	else:
+		results = model.fit(lag_order)
+	
 	sigma_u = np.asarray(results.sigma_u)
 	sd_u = np.sqrt(np.diag(sigma_u))
 	
 	fevd = results.fevd(forecast_horizon, sigma_u/sd_u)
 	fe = fevd.decomp[:,-1,:]
-	fevd = (fe / fe.sum(0)[:,None] * 100)
+	fevd = (fe / fe.sum(1)[:,None] * 100)
 
 	cont_incl = fevd.sum(0)
 	cont_to = fevd.sum(0) - np.diag(fevd)
 	cont_from  = fevd.sum(1) - np.diag(fevd)
-	spillover_index = cont_to.sum()/cont_incl.sum()
+	spillover_index = 100*cont_to.sum()/cont_incl.sum()
 
 	names = model.endog_names
 	spilloversTable = pd.DataFrame(fevd, columns=names).set_index([names])
@@ -119,3 +129,37 @@ def calcSpilloversTable(volatility, forecast_horizon=10, lag_order=None):
 	spilloversTable.loc['Cont_Incl','Cont_Net'] = spillover_index
 
 	return spilloversTable, lag_order, forecast_horizon
+
+def calcRollingSpillovers(volatility, forecast_horizon=10, lag_order=None,rollingWindow=200):
+	# rollingSpillovers: 
+	# [total] : spillover_index
+	# [to][sector] : Cont_To[sector]
+	# [from][sector] : Cont_From[sector]
+	# [net][sector] : Cont_Net[sector]
+	# [pairwaise][sector_to][sector_from] : spilloversTable.loc['sector_From','sector_To']
+
+	forecast_horizon = 10 if forecast_horizon is None else forecast_horizon
+	rollingWindow = 200 if rollingWindow is None else rollingWindow
+	
+	rollingSpillovers = {}
+	rollingSpillovers['total'] = pd.DataFrame()
+	rollingSpillovers['to'] = pd.DataFrame()
+	rollingSpillovers['from'] = pd.DataFrame()
+	rollingSpillovers['net'] = pd.DataFrame()
+	rollingSpillovers['pairwaise'] = {}
+	sectors = volatility.columns
+	for sector in sectors:
+		rollingSpillovers['pairwaise'][sector] = pd.DataFrame(columns=sectors)
+	
+	for i in range(volatility.shape[0]-(rollingWindow-1)):
+		UBound = i+rollingWindow
+		df = volatility.iloc[i:UBound]
+		spilloversTable, lag_order, forecast_horizon = calcAvgSpilloversTable(df,forecast_horizon,lag_order)
+		
+		rollingSpillovers['total'] = rollingSpillovers['total'].append(pd.DataFrame([[spilloversTable.loc['Cont_Incl','Cont_Net']]],index=[volatility.iloc[UBound-1].name]))
+		rollingSpillovers['to'] = rollingSpillovers['to'].append(pd.DataFrame([spilloversTable.loc['Cont_To']],index=[volatility.iloc[UBound-1].name]))
+		rollingSpillovers['from'] = rollingSpillovers['from'].append(pd.DataFrame([spilloversTable['Cont_From']],index=[volatility.iloc[UBound-1].name]))
+		rollingSpillovers['net'] = rollingSpillovers['net'].append(pd.DataFrame([spilloversTable['Cont_Net']],index=[volatility.iloc[UBound-1].name]))
+		for sector in sectors:
+			rollingSpillovers['pairwaise'][sector].loc[volatility.iloc[UBound-1].name] = spilloversTable[sector]
+	return rollingSpillovers
