@@ -3,6 +3,8 @@
 # ==============================
 import pandas as pd, numpy as np
 from statsmodels.tsa.api import VAR
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ==============================
 # IMPORT DATA
@@ -75,6 +77,7 @@ def calcVolatilityAslam(lnvariance,marketDays):
 # ==============================
 def calcSetStats(volatility):
 	setStats = pd.DataFrame(columns=['mean','median','max','min','stdDev','skew','kurtosis','count'])
+	setStats.index.name = 'sector'
 	for sector in volatility:
 		setStats.loc[sector] = \
 			volatility[sector].mean(), \
@@ -130,13 +133,16 @@ def calcAvgSpilloversTable(volatility, forecast_horizon=10, lag_order=None):
 
 	return spilloversTable, lag_order, forecast_horizon
 
+# ==============================
+# Rolling Spillovers Based on Diebold Yilmaz 2012
+# ==============================
 def calcRollingSpillovers(volatility, forecast_horizon=10, lag_order=None,rollingWindow=200):
 	# rollingSpillovers: 
 	# [total] : spillover_index
 	# [to][sector] : Cont_To[sector]
 	# [from][sector] : Cont_From[sector]
 	# [net][sector] : Cont_Net[sector]
-	# [pairwaise][sector_to][sector_from] : spilloversTable.loc['sector_From','sector_To']
+	# [pairwise][sector_to][sector_from] : spilloversTable.loc['sector_From','sector_To']
 
 	forecast_horizon = 10 if forecast_horizon is None else forecast_horizon
 	rollingWindow = 200 if rollingWindow is None else rollingWindow
@@ -146,10 +152,12 @@ def calcRollingSpillovers(volatility, forecast_horizon=10, lag_order=None,rollin
 	rollingSpillovers['to'] = pd.DataFrame()
 	rollingSpillovers['from'] = pd.DataFrame()
 	rollingSpillovers['net'] = pd.DataFrame()
-	rollingSpillovers['pairwaise'] = {}
+	rollingSpillovers['pairwiseTo'] = {}
+	rollingSpillovers['pairwiseNet'] = {}
 	sectors = volatility.columns
 	for sector in sectors:
-		rollingSpillovers['pairwaise'][sector] = pd.DataFrame(columns=sectors)
+		rollingSpillovers['pairwiseTo'][sector] = pd.DataFrame(columns=sectors)
+		rollingSpillovers['pairwiseNet'][sector] = pd.DataFrame(columns=sectors)
 	
 	for i in range(volatility.shape[0]-(rollingWindow-1)):
 		UBound = i+rollingWindow
@@ -161,5 +169,65 @@ def calcRollingSpillovers(volatility, forecast_horizon=10, lag_order=None,rollin
 		rollingSpillovers['from'] = rollingSpillovers['from'].append(pd.DataFrame([spilloversTable['Cont_From']],index=[volatility.iloc[UBound-1].name]))
 		rollingSpillovers['net'] = rollingSpillovers['net'].append(pd.DataFrame([spilloversTable['Cont_Net']],index=[volatility.iloc[UBound-1].name]))
 		for sector in sectors:
-			rollingSpillovers['pairwaise'][sector].loc[volatility.iloc[UBound-1].name] = spilloversTable[sector]
+			rollingSpillovers['pairwiseTo'][sector].loc[volatility.iloc[UBound-1].name] = spilloversTable[sector]
+			rollingSpillovers['pairwiseNet'][sector].loc[volatility.iloc[UBound-1].name] = spilloversTable[sector]-spilloversTable.loc[sector]
+
 	return rollingSpillovers
+
+# ==============================
+# SENSITIVITY ANALYSIS:
+# Average and Dynamic Spillovers With Variant Lag Order
+# ==============================
+def calcRollingSensitivityAnalysis(newRollingSpillovers):
+	sectors = list(newRollingSpillovers['to'].keys())
+	# ==============================
+	# ARRAY PREPARATIONS
+	# ==============================
+	sensitivityRange = {}
+	sensitivityRange['total'] = pd.DataFrame()
+	sensitivityRange['to'] = {}
+	sensitivityRange['from'] = {}
+	sensitivityRange['net'] = {}
+	sensitivityRange['pairwiseTo'] = {}
+	sensitivityRange['pairwiseNet'] = {}
+	for sector in sectors:
+		sensitivityRange['to'][sector] = pd.DataFrame()
+		sensitivityRange['from'][sector] = pd.DataFrame()
+		sensitivityRange['net'][sector] = pd.DataFrame()
+		sensitivityRange['pairwiseTo'][sector] = {}
+		sensitivityRange['pairwiseNet'][sector] = {}
+		for sectorFrom in sectors:
+			sensitivityRange['pairwiseTo'][sector][sectorFrom] = pd.DataFrame()
+			sensitivityRange['pairwiseNet'][sector][sectorFrom] = pd.DataFrame()
+
+	sensitivityRange['total'] = pd.DataFrame({'min':newRollingSpillovers['total'].min(axis=1),'median':newRollingSpillovers['total'].median(axis=1),'max':newRollingSpillovers['total'].max(axis=1)})
+	for sector in sectors:
+		sensitivityRange['to'][sector] = pd.DataFrame({'min':newRollingSpillovers['to'][sector].min(axis=1),'median':newRollingSpillovers['to'][sector].median(axis=1),'max':newRollingSpillovers['to'][sector].max(axis=1)})
+		sensitivityRange['from'][sector] = pd.DataFrame({'min':newRollingSpillovers['from'][sector].min(axis=1),'median':newRollingSpillovers['from'][sector].median(axis=1),'max':newRollingSpillovers['from'][sector].max(axis=1)})
+		sensitivityRange['net'][sector] = pd.DataFrame({'min':newRollingSpillovers['net'][sector].min(axis=1),'median':newRollingSpillovers['net'][sector].median(axis=1),'max':newRollingSpillovers['net'][sector].max(axis=1)})
+		for sectorFrom in sectors:
+			sensitivityRange['pairwiseTo'][sector][sectorFrom] = pd.DataFrame({'min':newRollingSpillovers['pairwiseTo'][sector][sectorFrom].min(axis=1),'median':newRollingSpillovers['pairwiseTo'][sector][sectorFrom].median(axis=1),'max':newRollingSpillovers['pairwiseTo'][sector][sectorFrom].max(axis=1)})
+			sensitivityRange['pairwiseNet'][sector][sectorFrom] = pd.DataFrame({'min':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].min(axis=1),'median':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].median(axis=1),'max':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].max(axis=1)})
+	
+	return sensitivityRange
+# ==============================
+# Charting
+# ==============================
+def genStackedTimeSeriesChart(df,filename,xaxis_title,yaxis_title):
+	fig = go.Figure()
+	for column in df:
+		fig.add_trace(go.Scatter( \
+			x=df.index, \
+			y=df[column], \
+			name=column \
+		))
+	fig.update_layout(title={'text':filename, 'x':0.5})
+	fig.update_layout(legend={"orientation":"h","y":-0.075})
+	fig.update_layout(margin=dict(l=50,r=50,b=100,t=50,pad=0))
+	fig.update_layout( \
+		xaxis_title = xaxis_title, \
+		yaxis_title = yaxis_title, \
+		template = 'plotly_white' \
+	)
+	fig.write_image('output\\'+filename+'.png',width=1400,height=1050)
+	return True

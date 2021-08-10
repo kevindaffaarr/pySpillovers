@@ -90,13 +90,29 @@ def getAvgSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	# ==============================
 	# OUTPUT
 	# ==============================
-	# StatsModel
+	# setStats
+	setStats.to_csv('output\setStats.csv')
 
-	# Volatility or Return Table and Graph
+	# Volatility Table
+	volatility.to_csv('output\\volatility.csv')
+
+	# Volatility Graph
+	f.genStackedTimeSeriesChart(\
+		df=volatility, \
+		filename='Volatilities (Annualized Standard Deviations)', \
+		xaxis_title = 'Date', \
+		yaxis_title = '%' \
+	)
 
 	# Data Spillover Table
+	filename = 'output\spilloversTable.csv'
+	title = 'Spillover Table\n'
+	title = title + 'lag_order,' + str(lag_order) + '\nforecast_horizon,' + str(forecast_horizon) + '\n'
+	title = title + 'TO,FROM\n'
+	with open(filename,'w') as out:
+		out.write(title)
+	spilloversTable.to_csv(filename,mode='a')
 
-	# END OF AVERAGE VOLATILITY SPILLOVER===========================================================================
 	return spilloversTable, setStats, volatility, lnvariance, lag_order, forecast_horizon
 
 def getRollingSpillovers(lag_order=None,forecast_horizon=None,output=None):
@@ -146,13 +162,13 @@ def getRollingSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	# ['to'][sector]
 	# ['from'][sector]
 	# ['net'][sector]
-	# ['pairwaise'][sector]
+	# ['pairwise'][sectorTo][sectorFrom]
 	rollingSpillovers = f.calcRollingSpillovers(volatility, forecast_horizon, lag_order,rollingWindow)
 
 	# ==============================
 	# OUTPUT
 	# ==============================
-	# Total, FROM, TO, and NET Each, NET Pairwaise Data Spillover Table and Graph
+	# Total, FROM, TO, and NET Each, NET Pairwise Data Spillover Table and Graph
 
 	return rollingSpillovers, volatility, lnvariance, lag_order, forecast_horizon
 
@@ -160,7 +176,14 @@ def getRollingSpillovers(lag_order=None,forecast_horizon=None,output=None):
 # SENSITIVITY ANALYSIS:
 # Average and Dynamic Spillovers With Variant Lag Order
 # ==============================
-def rollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_horizon,sectors):
+def getRollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_horizon,sectors):
+	# sensitivityRange['total']
+	# sensitivityRange['to'][sector]
+	# sensitivityRange['from'][sector]
+	# sensitivityRange['net'][sector]
+	# sensitivityRange['pairwiseTo'][sector][sectorFrom]
+	# sensitivityRange['pairwiseNet'][sector][sectorFrom]
+
 	# ==============================
 	# ARRAY PREPARATIONS
 	# ==============================
@@ -169,29 +192,18 @@ def rollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_horizon
 	newRollingSpillovers['to'] = {}
 	newRollingSpillovers['from'] = {}
 	newRollingSpillovers['net'] = {}
-	newRollingSpillovers['pairwaise'] = {}
+	newRollingSpillovers['pairwiseTo'] = {}
+	newRollingSpillovers['pairwiseNet'] = {}
 
 	for sector in sectors:
 		newRollingSpillovers['to'][sector] = pd.DataFrame()
 		newRollingSpillovers['from'][sector] = pd.DataFrame()
 		newRollingSpillovers['net'][sector] = pd.DataFrame()
-		newRollingSpillovers['pairwaise'][sector] = {}
+		newRollingSpillovers['pairwiseTo'][sector] = {}
+		newRollingSpillovers['pairwiseNet'][sector] = {}
 		for sectorFrom in sectors:
-			newRollingSpillovers['pairwaise'][sector][sectorFrom] = pd.DataFrame()
-
-	sensitivityRange = {}
-	sensitivityRange['total'] = pd.DataFrame()
-	sensitivityRange['to'] = {}
-	sensitivityRange['from'] = {}
-	sensitivityRange['net'] = {}
-	sensitivityRange['pairwaise'] = {}
-	for sector in sectors:
-		sensitivityRange['to'][sector] = pd.DataFrame()
-		sensitivityRange['from'][sector] = pd.DataFrame()
-		sensitivityRange['net'][sector] = pd.DataFrame()
-		sensitivityRange['pairwaise'][sector] = {}
-		for sectorFrom in sectors:
-			sensitivityRange['pairwaise'][sector][sectorFrom] = pd.DataFrame()
+			newRollingSpillovers['pairwiseTo'][sector][sectorFrom] = pd.DataFrame()
+			newRollingSpillovers['pairwiseNet'][sector][sectorFrom] = pd.DataFrame()
 
 	# ==============================
 	# ITERATE FOR EACH VARIANTPARAM
@@ -211,22 +223,22 @@ def rollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_horizon
 			newRollingSpillovers['from'][sector][i] = rollingSpillovers['from'][sector]
 			newRollingSpillovers['net'][sector][i] = rollingSpillovers['net'][sector]
 			for sectorFrom in sectors:
-				newRollingSpillovers['pairwaise'][sector][sectorFrom][i] = rollingSpillovers['pairwaise'][sector][sectorFrom]
+				newRollingSpillovers['pairwiseTo'][sector][sectorFrom][i] = rollingSpillovers['pairwiseTo'][sector][sectorFrom]
+				newRollingSpillovers['pairwiseNet'][sector][sectorFrom][i] = rollingSpillovers['pairwiseNet'][sector][sectorFrom]
 	
-	sensitivityRange['total'] = pd.DataFrame({'min':newRollingSpillovers['total'].min(axis=1),'median':newRollingSpillovers['total'].median(axis=1),'max':newRollingSpillovers['total'].max(axis=1)})
-	for sector in sectors:
-		sensitivityRange['to'][sector] = pd.DataFrame({'min':newRollingSpillovers['to'][sector].min(axis=1),'median':newRollingSpillovers['to'][sector].median(axis=1),'max':newRollingSpillovers['to'][sector].max(axis=1)})
-		sensitivityRange['from'][sector] = pd.DataFrame({'min':newRollingSpillovers['from'][sector].min(axis=1),'median':newRollingSpillovers['from'][sector].median(axis=1),'max':newRollingSpillovers['from'][sector].max(axis=1)})
-		sensitivityRange['net'][sector] = pd.DataFrame({'min':newRollingSpillovers['net'][sector].min(axis=1),'median':newRollingSpillovers['net'][sector].median(axis=1),'max':newRollingSpillovers['net'][sector].max(axis=1)})
-		for sectorFrom in sectors:
-			sensitivityRange['pairwaise'][sector][sectorFrom] = pd.DataFrame({'min':newRollingSpillovers['pairwaise'][sector][sectorFrom].min(axis=1),'median':newRollingSpillovers['pairwaise'][sector][sectorFrom].median(axis=1),'max':newRollingSpillovers['pairwaise'][sector][sectorFrom].max(axis=1)})
-	
+	# ==============================
+	# SENSITIVITY RANGE
+	# ==============================
+	sensitivityRange = f.calcRollingSensitivityAnalysis(newRollingSpillovers)
+
 	# ==============================
 	# OUTPUT
 	# ==============================
-	# Total, FROM, TO, and NET Each, NET Pairwaise Data Spillover Table and Graph
+	# Total, FROM, TO, and NET Each, NET Pairwise Data Spillover Table and Graph
 	
 	return sensitivityRange
+
+
 # ==================================================================================================
 # ===============================================MAIN===============================================
 # ==================================================================================================
@@ -239,18 +251,19 @@ del spilloversTable, setStats, volatility, lnvariance
 print('End of Calc Average Spillovers')
 
 # ROLLING
-print('Calc Rolling Spillovers')
+print('Calc Rolling Spillovers...')
 rollingSpillovers, temp1, temp2, temp3, temp4 = getRollingSpillovers(lag_order,forecast_horizon)
 del rollingSpillovers, temp1, temp2, temp3, temp4
 print('End of Calc Rolling Spillovers')
 
 # SENSITIVITY
-print('Calc Sensitivity Analysis Spillovers: lag_order')
-sensitivityRange = rollingSensitivityAnalysis('lag_order',1,lag_order*2,lag_order,forecast_horizon,sectors)
+print('Calc Sensitivity Analysis Spillovers: lag_order...')
+sensitivityRange = getRollingSensitivityAnalysis('lag_order',min(1,math.floor(0.5*lag_order)),math.ceil(1.5*lag_order),lag_order,forecast_horizon,sectors)
+del sensitivityRange
 
-print('Calc Sensitivity Analysis Spillovers: forecast_horizon')
-sensitivityRange = rollingSensitivityAnalysis('forecast_horizon',math.floor(0.5*forecast_horizon),math.ceil(1.5*forecast_horizon),lag_order,forecast_horizon,sectors)
-
+print('Calc Sensitivity Analysis Spillovers: forecast_horizon...')
+sensitivityRange = getRollingSensitivityAnalysis('forecast_horizon',min(1,math.floor(0.5*forecast_horizon)),math.ceil(1.5*forecast_horizon),lag_order,forecast_horizon,sectors)
+del sensitivityRange
 print('End of Calc Analysis Spillovers')
 
 print("End of Analysis")
