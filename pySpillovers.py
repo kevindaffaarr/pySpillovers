@@ -4,6 +4,8 @@
 import pandas as pd, numpy as np
 import math
 import functions as f
+
+from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -450,6 +452,13 @@ def getRollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_hori
 # ==================================================================================================
 # ===============================================MAIN===============================================
 # ==================================================================================================
+# ==============================
+# CHECK DIRECTORY
+# ==============================
+Path("output").mkdir(parents=True, exist_ok=True)
+Path("output/sensitivity_lag_order").mkdir(parents=True, exist_ok=True)
+Path("output/sensitivity_forecast_horizon").mkdir(parents=True, exist_ok=True)
+
 # AVERAGE
 print('Starting The Machine...')
 print('Calc Average Spillovers...')
