@@ -210,8 +210,9 @@ def calcRollingSensitivityAnalysis(newRollingSpillovers):
 			sensitivityRange['pairwiseNet'][sector][sectorFrom] = pd.DataFrame({'min':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].min(axis=1),'median':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].median(axis=1),'max':newRollingSpillovers['pairwiseNet'][sector][sectorFrom].max(axis=1)})
 	
 	return sensitivityRange
+
 # ==============================
-# Charting
+# CHARTING
 # ==============================
 def genStackedTimeSeriesChart(df,filename,xaxis_title,yaxis_title):
 	fig = go.Figure()
@@ -230,4 +231,59 @@ def genStackedTimeSeriesChart(df,filename,xaxis_title,yaxis_title):
 		template = 'plotly_white' \
 	)
 	fig.write_image('output\\'+filename+'.png',width=1400,height=1050)
+	return True
+
+def genBulkTimeSeriesChart(outputDict,filenameDict,xaxis_title,yaxis_title):
+	for key in outputDict:
+		fig = go.Figure()
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key], \
+			fill = 'tozeroy', \
+			name=filenameDict[key] \
+		))
+		fig.update_layout(title={'text':filenameDict[key], 'x':0.5})
+		fig.update_layout(showlegend=False)
+		fig.update_layout(margin=dict(l=50,r=50,b=100,t=50,pad=0))
+		fig.update_layout( \
+			xaxis_title = xaxis_title, \
+			yaxis_title = yaxis_title, \
+			template = 'plotly_white' \
+		)
+		fig.write_image('output\\'+filenameDict[key]+'.png',width=1400,height=1050)
+	return True
+
+def genSubplotsTimeSeriesChart(outputDict,chartNameDict,xaxis_title,yaxis_title,filename,chartCol=4):
+	chartCol = 4 if chartCol is None else chartCol
+	nCharts = len(outputDict)
+	chartRow = int(nCharts/chartCol)
+	if nCharts%chartCol > 0:
+		chartRow = chartRow+1
+
+	# MAKE_SUBPLOTS
+	fig = make_subplots(rows=chartRow, cols=chartCol,subplot_titles=list(chartNameDict.values()),vertical_spacing=0.05)
+	# ADD_TRACE
+	rowPos = 1
+	colPos = 1
+	for key in outputDict:
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key], \
+			fill = 'tozeroy', \
+			name=chartNameDict[key] \
+		),row=rowPos,col=colPos)
+		colPos = colPos + 1
+		if colPos > chartCol:
+			colPos = 1
+			rowPos = rowPos + 1
+	fig.update_layout(showlegend=False)
+	fig.update_layout(margin=dict(l=50,r=50,b=100,t=50,pad=0))
+	fig.update_layout( \
+		xaxis_title = xaxis_title, \
+		yaxis_title = yaxis_title, \
+		template = 'plotly_white' \
+	)
+	fig.update_layout(font_size=20)
+	fig.update_annotations(font_size=30)
+	fig.write_image('output\\'+filename+'.png',width=1400*chartCol,height=1050*chartRow)
 	return True
