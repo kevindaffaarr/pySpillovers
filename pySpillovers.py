@@ -193,15 +193,15 @@ def exportRollingSpillovers(rollingSpillovers,sectors):
 	
 	for column in sectors:
 		outputDict['to_'+column] = rollingSpillovers['to'][column]
-		filenameDict['to_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- TO'
+		filenameDict['to_'+column] = 'Rolling Directional Volatility Spillovers '+column+' - TO OTHERS'
 		subplotsOutputDict['to_'+column] = rollingSpillovers['to'][column]
-		subplotsfilenameDict['to_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- TO'
+		subplotsfilenameDict['to_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- TO OTHERS'
 	f.genSubplotsTimeSeriesChart( \
 		subplotsOutputDict, \
 		chartNameDict=subplotsfilenameDict, \
 		xaxis_title='Date', \
 		yaxis_title='%', \
-		filename='Rolling Directional Volatility Spillovers All Sectors - TO', \
+		filename='Rolling Directional Volatility Spillovers All Sectors - TO OTHERS', \
 		chartCol=3
 	)
 	subplotsOutputDict = {}
@@ -209,15 +209,15 @@ def exportRollingSpillovers(rollingSpillovers,sectors):
 
 	for column in sectors:
 		outputDict['from_'+column] = rollingSpillovers['from'][column]
-		filenameDict['from_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- FROM'
+		filenameDict['from_'+column] = 'Rolling Directional Volatility Spillovers '+column+' - FROM OTHERS'
 		subplotsOutputDict['from_'+column] = rollingSpillovers['from'][column]
-		subplotsfilenameDict['from_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- FROM'
+		subplotsfilenameDict['from_'+column] = 'Rolling Directional Volatility Spillovers '+column+' - FROM OTHERS'
 	f.genSubplotsTimeSeriesChart( \
 		subplotsOutputDict, \
 		chartNameDict=subplotsfilenameDict, \
 		xaxis_title='Date', \
 		yaxis_title='%', \
-		filename='Rolling Directional Volatility Spillovers All Sectors - FROM', \
+		filename='Rolling Directional Volatility Spillovers All Sectors - FROM OTHERS', \
 		chartCol=3
 	)
 	subplotsOutputDict = {}
@@ -225,9 +225,9 @@ def exportRollingSpillovers(rollingSpillovers,sectors):
 
 	for column in sectors:
 		outputDict['net_'+column] = rollingSpillovers['net'][column]
-		filenameDict['net_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- NET'
+		filenameDict['net_'+column] = 'Rolling Directional Volatility Spillovers '+column+' - NET'
 		subplotsOutputDict['net_'+column] = rollingSpillovers['net'][column]
-		subplotsfilenameDict['net_'+column] = 'Rolling Directional Volatility Spillovers '+column+'- NET'
+		subplotsfilenameDict['net_'+column] = 'Rolling Directional Volatility Spillovers '+column+' - NET'
 	f.genSubplotsTimeSeriesChart( \
 		subplotsOutputDict, \
 		chartNameDict=subplotsfilenameDict, \
@@ -364,15 +364,15 @@ def getRollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_hori
 	
 	for column in sectors:
 		outputDict['to_'+column] = sensitivityRange['to'][column]
-		filenameDict['to_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - TO'
+		filenameDict['to_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - TO OTHERS'
 		subplotsOutputDict['to_'+column] = sensitivityRange['to'][column]
-		subplotsfilenameDict['to_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - TO'
+		subplotsfilenameDict['to_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - TO OTHERS'
 	f.genSubplotsRangeChart( \
 		subplotsOutputDict, \
 		chartNameDict=subplotsfilenameDict, \
 		xaxis_title='Date', \
 		yaxis_title='%', \
-		filename='sensitivity_'+variantParam+'\\'+'Sensitivity Range Rolling Directional Volatility Spillovers All Sectors - TO', \
+		filename='sensitivity_'+variantParam+'\\'+'Sensitivity Range Rolling Directional Volatility Spillovers All Sectors - TO OTHERS', \
 		chartCol=3
 	)
 	subplotsOutputDict = {}
@@ -380,15 +380,15 @@ def getRollingSensitivityAnalysis(variantParam,start,end,lag_order,forecast_hori
 
 	for column in sectors:
 		outputDict['from_'+column] = sensitivityRange['from'][column]
-		filenameDict['from_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - FROM'
+		filenameDict['from_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - FROM OTHERS'
 		subplotsOutputDict['from_'+column] = sensitivityRange['from'][column]
-		subplotsfilenameDict['from_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - FROM'
+		subplotsfilenameDict['from_'+column] = 'Sensitivity Range Rolling Directional Volatility Spillovers '+column+' - FROM OTHERS'
 	f.genSubplotsRangeChart( \
 		subplotsOutputDict, \
 		chartNameDict=subplotsfilenameDict, \
 		xaxis_title='Date', \
 		yaxis_title='%', \
-		filename='sensitivity_'+variantParam+'\\'+'Sensitivity Range Rolling Directional Volatility Spillovers All Sectors - FROM', \
+		filename='sensitivity_'+variantParam+'\\'+'Sensitivity Range Rolling Directional Volatility Spillovers All Sectors - FROM OTHERS', \
 		chartCol=3
 	)
 	subplotsOutputDict = {}
