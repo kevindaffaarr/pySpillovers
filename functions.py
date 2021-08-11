@@ -287,3 +287,95 @@ def genSubplotsTimeSeriesChart(outputDict,chartNameDict,xaxis_title,yaxis_title,
 	fig.update_annotations(font_size=30)
 	fig.write_image('output\\'+filename+'.png',width=1400*chartCol,height=1050*chartRow)
 	return True
+
+def genBulkRangeChart(outputDict,filenameDict,xaxis_title,yaxis_title,folder=''):
+	folder = '' if folder =='' else folder
+
+	for key in outputDict:
+		fig = go.Figure()
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['max'], \
+			mode = 'lines', \
+			line_color = 'rgb(136,204,238)', \
+			name=filenameDict[key] \
+		))
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['min'], \
+			fill = 'tonexty', \
+			mode = 'lines', \
+			line_color = 'rgb(136,204,238)', \
+			name=filenameDict[key] \
+		))
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['median'], \
+			mode = 'lines', \
+			line_color = 'blue', \
+			name=filenameDict[key] \
+		))
+
+		fig.update_layout(title={'text':filenameDict[key], 'x':0.5})
+		fig.update_layout(showlegend=False)
+		fig.update_layout(margin=dict(l=50,r=50,b=100,t=50,pad=0))
+		fig.update_layout( \
+			xaxis_title = xaxis_title, \
+			yaxis_title = yaxis_title, \
+			template = 'plotly_white' \
+		)
+		fig.write_image('output\\'+folder+filenameDict[key]+'.png',width=1400,height=1050)
+	return True
+
+def genSubplotsRangeChart(outputDict,chartNameDict,xaxis_title,yaxis_title,filename,chartCol=4):
+	chartCol = 4 if chartCol is None else chartCol
+	nCharts = len(outputDict)
+	chartRow = int(nCharts/chartCol)
+	if nCharts%chartCol > 0:
+		chartRow = chartRow+1
+
+	# MAKE_SUBPLOTS
+	fig = make_subplots(rows=chartRow, cols=chartCol,subplot_titles=list(chartNameDict.values()),vertical_spacing=0.05)
+	# ADD_TRACE
+	rowPos = 1
+	colPos = 1
+	for key in outputDict:
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['max'], \
+			mode = 'lines', \
+			line_color = 'rgb(136,204,238)', \
+			name=chartNameDict[key] \
+		),row=rowPos,col=colPos)
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['min'], \
+			fill = 'tonexty', \
+			mode = 'lines', \
+			line_color = 'rgb(136,204,238)', \
+			name=chartNameDict[key] \
+		),row=rowPos,col=colPos)
+		fig.add_trace(go.Scatter( \
+			x=outputDict[key].index, \
+			y=outputDict[key]['median'], \
+			mode = 'lines', \
+			line_color = 'blue', \
+			name=chartNameDict[key] \
+		),row=rowPos,col=colPos)
+
+		colPos = colPos + 1
+		if colPos > chartCol:
+			colPos = 1
+			rowPos = rowPos + 1
+
+	fig.update_layout(showlegend=False)
+	fig.update_layout(margin=dict(l=50,r=50,b=100,t=50,pad=0))
+	fig.update_layout( \
+		xaxis_title = xaxis_title, \
+		yaxis_title = yaxis_title, \
+		template = 'plotly_white' \
+	)
+	fig.update_layout(font_size=20)
+	fig.update_annotations(font_size=30)
+	fig.write_image('output\\'+filename+'.png',width=1400*chartCol,height=1050*chartRow)
+	return True
