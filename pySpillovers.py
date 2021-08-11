@@ -83,6 +83,11 @@ def getAvgSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	# STATISTIC OF DATA
 	# ==============================
 	setStats = f.calcSetStats(volatility)
+	
+	# ==============================
+	# Correlation of Data
+	# ==============================
+	correlationTable = volatility.corr(method='pearson')
 
 	# ==============================
 	# Spillovers Table
@@ -95,6 +100,9 @@ def getAvgSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	# setStats
 	setStats.to_csv('output\setStats.csv')
 
+	# correlationTable
+	correlationTable.to_csv('output\correlationTable.csv')
+	
 	# Volatility Table
 	volatility.to_csv('output\\volatility.csv')
 
