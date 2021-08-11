@@ -3,3 +3,4 @@ env
 .gitignore
 spilloversTable.csv
 __pycache__
+output
