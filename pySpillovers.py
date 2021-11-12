@@ -72,6 +72,7 @@ def getAvgSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	# ==============================
 	# DATA PREPARATION BASED ON OUTPUTMODE
 	# ==============================
+	lnreturn = f.calcLnreturn(sectorsData)
 	lnvariance = f.calcLnvariance(sectorsData)
 
 	if outputMode == "Volatility Diebold":
@@ -104,6 +105,7 @@ def getAvgSpillovers(lag_order=None,forecast_horizon=None,output=None):
 	correlationTable.to_csv('output\correlationTable.csv')
 	
 	# Volatility Table
+	lnreturn.to_csv('output\\lnreturn.csv')
 	volatility.to_csv('output\\volatility.csv')
 
 	# Volatility Graph

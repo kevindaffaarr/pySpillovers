@@ -30,6 +30,16 @@ def getWithRollingWindow(sectorData,dateFrom,dateTo,rollingWindow=200):
 
 # ==============================
 # DATA PREPARATION BASED ON OUTPUTMODE
+def calcLnreturn (sectorsData):
+	# sectorsData is a dict consist of dataframes of data for each sector/market
+	# example: sectorsData['AGRI'] = pd.Dataframe(columns=['Open','High','Low','Close'])
+	# np.log is natural log
+	lnreturn = pd.DataFrame()
+	for sector in sectorsData:
+		lnreturn[sector] = sectorsData[sector]['Close'].div(sectorsData[sector]['Close'].shift(1))
+	lnreturn = lnreturn.dropna()
+	return lnreturn
+
 # ==============================
 def calcLnvariance (sectorsData):
 	# sectorsData is a dict consist of dataframes of data for each sector/market
